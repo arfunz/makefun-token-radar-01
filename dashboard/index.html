@@ -7,8 +7,68 @@
 <link rel="stylesheet" href="app.css">
 </head>
 <body>
-<a class="skip" href="#board">Skip to the board</a>
-<main id="board" tabindex="-1" aria-busy="true"></main>
+<header class="top">
+  <div class="brand"><span class="radar-dot" aria-hidden="true"></span> Token Radar</div>
+  <div class="chips">
+    <span class="chip" id="chip-date">Snapshot 2026-11-14</span>
+    <span class="chip">DefiLlama protocol index</span>
+    <span class="chip">radar-2 model</span>
+  </div>
+</header>
+<main>
+  <section class="lede">
+    <h1><em>40 watchlist protocols</em>, ranked by implied value</h1>
+    <p>The watchlist is the floor: every protocol with at least $50M of TVL and no token on record. The early radar adds 206 pre-token protocols the floor leaves out. Implied value is a model, not a promise: a protocol records no token, it does not mean it will ever issue one.</p>
+  </section>
+  <section class="stats" id="stats" aria-label="Radar summary"></section>
+  <section class="controls" aria-label="Filters">
+    <label class="field field-search">Search
+      <input id="q" type="search" placeholder="Search name, category or chain" autocomplete="off">
+    </label>
+    <label class="field">Category
+      <select id="category"></select>
+    </label>
+    <label class="field">Chain
+      <select id="chain"></select>
+    </label>
+    <label class="check"><input id="watch" type="checkbox"> Watchlist only</label>
+    <div class="tabs" role="tablist" aria-label="Token status">
+      <button id="tab-pre" role="tab" aria-selected="true">Pre-token</button>
+      <button id="tab-live" role="tab" aria-selected="false">Live token</button>
+    </div>
+    <p class="count" id="count"></p>
+  </section>
+  <section class="board-wrap">
+    <p class="hint" id="hint">Pre-token protocols, strongest implied value first. Select a row for its model and farm plan.</p>
+    <table id="board">
+      <thead><tr>
+        <th data-sort="rank" scope="col">Rank</th>
+        <th data-sort="name" scope="col">Protocol</th>
+        <th data-sort="tvl" scope="col">TVL</th>
+        <th data-sort="change" scope="col">7d</th>
+        <th data-sort="age" scope="col">Age</th>
+        <th data-sort="implied" scope="col">Implied value</th>
+        <th scope="col">Token</th>
+      </tr></thead>
+      <tbody id="rows"></tbody>
+    </table>
+    <table id="live" hidden>
+      <thead><tr>
+        <th scope="col">Protocol</th>
+        <th scope="col">Category</th>
+        <th scope="col">TVL</th>
+        <th scope="col">Market cap</th>
+        <th scope="col">7d</th>
+        <th scope="col">Token</th>
+      </tr></thead>
+      <tbody id="live-rows"></tbody>
+    </table>
+  </section>
+  <section class="model" id="model" aria-label="How implied value is computed"></section>
+</main>
+<div class="dialog-backdrop" id="dialog-backdrop" hidden>
+  <div class="dialog" role="dialog" aria-modal="true" aria-label="Protocol detail" id="dialog"></div>
+</div>
 <script src="../data.js"></script>
 <script src="app.js"></script>
 </body>
