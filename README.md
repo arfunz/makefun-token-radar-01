@@ -1,65 +1,72 @@
-# Token Radar — pre-token protocols ranked by implied value
+# Token Radar
 
-An entry for make.fun's **token-radar-01** bounty ("Build the best token launch radar", $1,325 USDC).
-
-The radar reads a sealed snapshot of every protocol DefiLlama tracks, finds the ones that
-still record no token and are not a wrapped, staked or bridged product of a token that
-already trades, ranks them by what their launch would be worth, and shows a reader how to
-farm each one.
+A token launch radar: every protocol with at least $50M of TVL and no token on
+record, plus every other pre-token protocol the floor leaves out, ranked by an
+implied value built only from the snapshot's own figures.
 
 ## The model (radar-2)
 
-Implied value follows only from the snapshot's own figures, and no protocol name is ever
-special-cased — one function scores every row:
+A protocol that records no token is scored by
 
 ```
-implied = round( tvl_usd × category_multiple
-                 × (1 + clamp(change_7d, -60, 120) / 100 × 0.5)
-                 × (0.6 + min(age_days, 1095) / 1095 × 0.4) )
+implied = round( tvl_usd x category_multiple
+  x (1 + clamp(change_7d, -60, 120) / 100 x 0.5)
+  x (0.6 + min(age_days, 1095) / 1095 x 0.4) )
 ```
 
-- **category_multiple** — the median market-cap-to-TVL ratio of the snapshot's own
-  live-token protocols in the same category (at least 3 peers; otherwise the global median
-  across every live-token protocol), clamped to [0.02, 1.5]. A lending protocol is priced
-  like lending protocols trade; a DEX like DEXs trade. The multiple is computed from the
-  snapshot at run time, so it moves with the market the snapshot records.
-- **growth** — the protocol's seven-day TVL change, clamped to [-60, +120]%.
-- **maturity** — how long the protocol has run with no token (days since DefiLlama first
-  listed it; 365 days when unlisted), scaled to [0.6, 1.0].
+- **category_multiple** is the median market-cap-to-TVL ratio of the snapshot's
+  own live-token peers in the same category (at least 3 peers), otherwise the
+  global median over all live-token protocols. Multiples are clamped to
+  0.02–1.5 and computed at run time: no protocol name and no multiple is
+  written in by hand.
+- **growth** is the seven-day TVL change, clamped to −60…120%, at half weight.
+- **maturity** is how long the protocol has run with no token, from 0.6 for a
+  brand-new listing to 1.0 after three years; an unlisted protocol counts as
+  one year old.
 
-The board covers the whole pre-token universe the snapshot records: all 40 watchlist
-protocols (TVL ≥ $50M, no token, not wrapped/staked/bridged) plus every other rankable
-pre-token protocol — 246 rows in this snapshot. Above the floor, wrapped, staked and
-bridged products of a token that already trades (WBTC, USDT0, a chain's canonical bridge)
-are kept out, because their token already exists. Live-token protocols are set aside with
-their market caps shown, never mixed into the ranking.
-
-Each row carries a seven-step farm plan derived from the protocol's own record (category,
-chains, TVL, age): two qualifying actions for its category, a weekly action, a hold window,
-a claim check and a farm log — each step with its cost and time.
+The board covers the whole watchlist — all 40 protocols at or above the $50M
+floor with no token on record — plus 206 earlier pre-token protocols, for 246
+rows. Above the floor, an early row must also pass the watchlist's exclusion:
+wrapped, staked and bridged products of a token that already trades, exchange
+products and versioned copies are kept out. Below the floor every rankable
+pre-token protocol is taken. The top row is Steakhouse Financial at $464.9M of
+implied value.
 
 ## The dashboard
 
-`dashboard/` is a static page with no network and no framework: a sortable, filterable
-board (search, category, chain, watchlist-only), a detail view for every protocol with the
-model's own breakdown and its farm plan, a live-token view, and a panel showing the
-category multiples the model computed. The page recomputes each row from the snapshot
-figures and checks the number `board.json` carries. The implied-value bars use a log scale,
-because the top row is worth thousands of times the smallest one, and the detail view
-totals the farm plan's cost (capital held in the position, one-off gas, then weekly gas)
-before the steps.
+`dashboard/` is a static page (no network, no framework) that reads `data.js`.
+It is sortable and filterable — by name, category, chain, watchlist-only, and
+pre-token versus live-token — and every row opens a detail view with the full
+model breakdown and a seven-step farm plan. Implied-value bars are on a log
+scale: the top row is worth thousands of times the smallest, so a linear bar
+would hide every row below it. The farm plan names what to do, what it costs
+and how long it takes, and the detail view totals the cost: the capital, held
+in the position and not spent, plus the gas one-off and the weekly gas. The
+page recomputes each row's implied value from its own figures and checks it
+against the number `board.json` carries. A "How implied value is computed"
+panel shows the formula and the category-multiples table.
 
 ## Run it
 
-```sh
-mkdir -p out && MAKEFUN_OUTPUT_DIR=out node main.ts --input <snapshot.json|directory>
+```
+mkdir -p out
+MAKEFUN_OUTPUT_DIR=out node main.ts --input <snapshot.json|directory>
 ```
 
-`main.ts` (Node 22, standard library only) reads the snapshot, writes the ranked board to
-`/output/board.json`, the dashboard's data to `/output/data.js`, copies `dashboard/` and
-`screenshots/` to `/output`, and writes `/output/dossier.json` with the vendored
-`vendor/makefun-board.ts`.
+The program reads `/input/snapshot.json` by default (or `--input`), scores the
+board, and writes `board.json`, `data.js`, `dashboard/`, `screenshots/` and
+`dossier.json` to the output directory. It exits 1 when the board fails the
+gate (a missing watchlist slug, ranks out of order, an implied value rising
+with rank, a farm step outside 3–12 steps or 20–600 characters) or when fewer
+than 3 screenshots are present. Two runs over the same snapshot write
+identical bytes.
 
-## License
+## Files
 
-MIT. See `LICENSE`.
+- `main.ts` — the program: read, score, write, dossier.
+- `lib/model.ts` — the radar-2 model, the board, the farm plans.
+- `vendor/makefun-board.ts` — make.fun's dossier library, copied unchanged.
+- `dashboard/` — the page: `index.html`, `app.css`, `app.js`.
+- `screenshots/` — board, detail and filtered views of the page.
+
+MIT licensed. See LICENSE.
