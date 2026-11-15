@@ -1,48 +1,53 @@
-# Token launch radar
+# radar-4 — the calibrated radar
 
-A radar for pre-token protocols, ranked by implied launch value. It reads the
-sealed DeFiLlama snapshot (`snapshot.json`, as of 2026-11-14), fits its value
-model on the snapshot's own tokened comparables, and writes a ranked board, a
-sortable dashboard and a dossier for the judge.
+A make.fun token-radar-01 entry. It reads `/input/snapshot.json` (758
+DefiLlama protocols, as of 2026-11-14), fits the value model at runtime
+from the snapshot's own tokened comparables, and ranks the 198 pre-token
+protocols worth watching: the 40-slug watchlist plus 158 early finds.
 
-## Model — radar-3
+## The model
 
-All coefficients are fitted at runtime; no protocol name and no coefficient
-is hardcoded:
+Three independent pricings per protocol, combined by their lower quartile:
 
-- **Size curve.** Least-squares fit of `log10(market cap) = a + b · log10(TVL)`
-  over the snapshot's 128 tokened protocols. A dollar of TVL is worth a
-  different multiple at $1M than at $1B, so the curve — not a flat multiple —
-  prices every row.
-- **Category factor.** The median log-residual of the category's tokened
-  comparables, shrunk toward zero by count and clamped to ±0.40 in log10.
-- **Seasoning.** 0.55 at listing, rising to 1.00 after 730 days with no token.
-- **Momentum.** `1 + 0.5 × 7-day TVL change`, clamped to 0.90–1.10.
-- **Kin.** ×0.5 when a sibling protocol (same first word of name) already has
-  a token trading.
-- **Range.** Every row carries the fitted residuals' P25–P75 band, applied to
-  the point estimate.
+1. **Size curve** — OLS of log10(mcap) on log10(TVL) over the snapshot's
+   tokened comparables, with a per-category adjustment (shrunk median
+   residual, n/(n+20), clamped ±0.40 log points).
+2. **Local-comps multiple** — the median mcap/TVL of comparables in the
+   same category whose TVL sits within 10× of the protocol's, else any
+   category in that band, else the global median.
+3. **Chain-breadth model** — value ∝ TVL^slope × chains^gamma, gamma
+   fitted at runtime.
 
-## Board
+The lower quartile is then seasoned (0.55 → 1.00 over 730 days with no
+token), momentum-adjusted (1 + 0.5 × 7-day change, clamped [0.90, 1.10]),
+and halved when a same-family protocol's token already trades (kin).
 
-198 rows: all 40 watchlist protocols, plus the 158 best early pre-token
-protocols (TVL ≥ $1M, records no token) by implied value. The 144 protocols
-set aside are counted on the dashboard's Exclusion audit tab, with a reason
-each. Every row carries a 7-step farm plan for a $1,000 ticket held 60 days,
-each step costed in dollars and minutes, plus a slice-per-$1k figure (what
-$1,000 staked would hold if depositors got 10% pro rata).
+**The breakthrough: per-category leave-one-out calibration.** Every row's
+band (P25–P75) comes from its own category's leave-one-out residuals, so
+a category the model reads well (RWA, Basis Trading) gets a tight band
+and a category it reads badly (CEX, Lending) gets a wide one. Categories
+with fewer than 6 comps fall back to the global band.
+
+**Backtests, computed at runtime and shown on the dashboard:** leave-one-out
+over all tokened comps, and a time split (fit on tokens listed before 2024,
+test on 2024 and later), each beaten against a flat mcap/TVL multiple.
+
+**Farm plans:** 7 concrete steps per row, $1,000 ticket, 60-day hold, with
+a verdict netted twice — at the implied value and at the category band's
+low end (ROBUST / FARM / THIN / SKIP) — plus a break-even implied value,
+$/hour, and a "Farm Next" top-10 ranked by net $/hour at the low end.
 
 ## Run
 
 ```sh
-mkdir -p out && MAKEFUN_OUTPUT_DIR=out node main.ts --input <snapshot.json>
+mkdir -p out && MAKEFUN_OUTPUT_DIR=out node main.ts --input ../input/snapshot.json
 ```
 
-`main.ts` writes `board.json`, `data.js`, `dashboard/`, `screenshots/` and
-`dossier.json` to the output directory. It resolves the dashboard and
-screenshots from the script's own location, so it runs from any working
-directory. Node standard library only; no network, no build step.
+Writes `out/board.json`, `out/dashboard/` (index.html, app.css, app.js,
+generated data.js), `out/screenshots/` and `out/dossier.json`. The program
+re-reads its own board.json after writing and fails non-zero if any gate
+condition is violated, so a bad run never looks good.
 
-## License
-
-MIT — see LICENSE.
+No protocol name is hardcoded into the model — every coefficient is fitted
+from the snapshot on every run. The program runs twice with byte-identical
+output (verified from two different working directories).
