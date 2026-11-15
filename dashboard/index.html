@@ -2,73 +2,105 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Token Radar — pre-token protocols ranked by implied value</title>
+<title>Token Launch Radar — pre-token protocols ranked by implied value</title>
 <link rel="stylesheet" href="app.css">
 </head>
 <body>
 <header class="top">
-  <div class="brand"><span class="radar-dot" aria-hidden="true"></span> Token Radar</div>
-  <div class="chips">
-    <span class="chip" id="chip-date">Snapshot 2026-11-14</span>
-    <span class="chip">DefiLlama protocol index</span>
-    <span class="chip">radar-2 model</span>
+  <div>
+    <h1>TOKEN LAUNCH RADAR</h1>
+    <p class="sub">Pre-token protocols ranked by implied launch value · snapshot <span id="asof"></span> · floor $50M · <span id="src"></span></p>
+  </div>
+  <div class="topstats">
+    <div><b id="st-ranked">198</b><span>ranked</span></div>
+    <div><b id="st-watch">40/40</b><span>watchlist</span></div>
+    <div><b id="st-audit">144</b><span>set aside</span></div>
+    <div><b id="st-top">$115.4M</b><span>top value</span></div>
   </div>
 </header>
+
+<div class="method" id="methodbox"></div>
+
+<nav class="tabs" id="tabs">
+  <button data-tab="board" class="on">Board <span id="n-board">198</span></button>
+  <button data-tab="audit">Exclusion audit</button>
+  <button data-tab="model">Model &amp; calibration</button>
+</nav>
+
 <main>
-  <section class="lede">
-    <h1><em>40 watchlist protocols</em>, ranked by implied value</h1>
-    <p>The watchlist is the floor: every protocol with at least $50M of TVL and no token on record. The early radar adds 206 pre-token protocols the floor leaves out. Implied value is a model, not a promise: a protocol records no token, it does not mean it will ever issue one.</p>
-  </section>
-  <section class="stats" id="stats" aria-label="Radar summary"></section>
-  <section class="controls" aria-label="Filters">
-    <label class="field field-search">Search
-      <input id="q" type="search" placeholder="Search name, category or chain" autocomplete="off">
-    </label>
-    <label class="field">Category
-      <select id="category"></select>
-    </label>
-    <label class="field">Chain
-      <select id="chain"></select>
-    </label>
-    <label class="check"><input id="watch" type="checkbox"> Watchlist only</label>
-    <div class="tabs" role="tablist" aria-label="Token status">
-      <button id="tab-pre" role="tab" aria-selected="true">Pre-token</button>
-      <button id="tab-live" role="tab" aria-selected="false">Live token</button>
+  <section id="tab-board">
+    <div class="controls">
+      <input id="q" type="search" placeholder="Search protocol, category or chain…" aria-label="Search">
+      <select id="fcat" aria-label="Category"><option value="">All categories</option></select>
+      <select id="fchain" aria-label="Chain"><option value="">All chains</option></select>
+      <div class="chips" id="chips">
+        <button data-chip="all" class="on">All 198</button>
+        <button data-chip="watchlist">Watchlist 40</button>
+        <button data-chip="early">Early 158</button>
+        <button data-chip="floor">Above $50M floor</button>
+      </div>
     </div>
-    <p class="count" id="count"></p>
-  </section>
-  <section class="board-wrap">
-    <p class="hint" id="hint">Pre-token protocols, strongest implied value first. Select a row for its model and farm plan.</p>
+    <p class="hint">Click a column to sort. Click a row for its detail, model breakdown and farm plan. Every protocol here records no token.</p>
     <table id="board">
       <thead><tr>
-        <th data-sort="rank" scope="col">Rank</th>
-        <th data-sort="name" scope="col">Protocol</th>
-        <th data-sort="tvl" scope="col">TVL</th>
-        <th data-sort="change" scope="col">7d</th>
-        <th data-sort="age" scope="col">Age</th>
-        <th data-sort="implied" scope="col">Implied value</th>
-        <th scope="col">Token</th>
+        <th data-k="rank">#</th><th data-k="name">Protocol</th><th data-k="category">Category</th>
+        <th data-k="chains">Chains</th><th data-k="tvl_usd">TVL</th><th data-k="change_7d">7D</th>
+        <th data-k="age_days">No token for</th><th data-k="comp_x">Comp ×</th>
+        <th data-k="implied_usd">Implied value</th><th data-k="low_usd">Range</th>
+        <th data-k="slice_per_1k_usd">Slice / $1k</th><th data-k="farm_ticket_usd">Farm ticket</th>
       </tr></thead>
       <tbody id="rows"></tbody>
     </table>
-    <table id="live" hidden>
-      <thead><tr>
-        <th scope="col">Protocol</th>
-        <th scope="col">Category</th>
-        <th scope="col">TVL</th>
-        <th scope="col">Market cap</th>
-        <th scope="col">7d</th>
-        <th scope="col">Token</th>
-      </tr></thead>
-      <tbody id="live-rows"></tbody>
+    <p class="count" id="count"></p>
+  </section>
+
+  <section id="tab-audit" hidden>
+    <div class="cards" id="auditcards"></div>
+    <h2>Why each protocol is set aside</h2>
+    <p class="hint">Every one of the 758 protocols in the snapshot is accounted for: 198 ranked, 144 set aside with a reason, 416 already have a token trading and are not candidates. A protocol that records no token may still have one its record does not carry — the audit reads the record, it does not prove the absence.</p>
+    <table id="audittable">
+      <thead><tr><th>Reason</th><th>Count</th><th>Share of 758</th></tr></thead>
+      <tbody id="auditrows"></tbody>
+    </table>
+    <h2>The rules</h2>
+    <ul class="rules">
+      <li>Ranked: records no token, TVL at or above $1M, and not a wrapped, staked or bridged product, not a bridge, liquid-staking, restaking or CEX protocol, not a versioned duplicate, not exchange-owned.</li>
+      <li>Watchlist (40) is forced in: every protocol on the house watchlist is ranked, whatever its implied value.</li>
+      <li>Sibling protocols — a first word shared with a protocol whose token already trades — are ranked at half value, not excluded: 4 sit on the board at ×0.5.</li>
+      <li>Excluded categories are read from the snapshot's own category field; versioned names end in V2, v2 or 2.0; wrapped and staked products carry the word in their name.</li>
+    </ul>
+  </section>
+
+  <section id="tab-model" hidden>
+    <div class="cards" id="modelcards"></div>
+    <h2>How the value is fitted</h2>
+    <p class="hint" id="modeltext"></p>
+    <h2>Market line — the snapshot's own tokened protocols</h2>
+    <p class="hint">Dark dots: the 128 tokened comparables, market cap against TVL. Blue dots: this radar's 198 estimates. Line: the fitted power law. A dollar of TVL is worth a different multiple at $1M than at $1B — the curve, not a flat multiple, prices every row.</p>
+    <svg id="scatter" viewBox="0 0 640 360" role="img" aria-label="Market cap against TVL scatter"></svg>
+    <h2>Implied values on the board</h2>
+    <svg id="hist" viewBox="0 0 640 180" role="img" aria-label="Histogram of implied values"></svg>
+    <h2>Category factors</h2>
+    <p class="hint">Median log-residual of the category's tokened comparables, shrunk toward zero by count (fewer peers, more shrinkage), clamped to ±0.40 in log10. Positive means the category's tokens trade rich against the curve.</p>
+    <table id="cattable">
+      <thead><tr><th>Category</th><th>Factor</th><th>Effect on value</th></tr></thead>
+      <tbody id="catrows"></tbody>
     </table>
   </section>
-  <section class="model" id="model" aria-label="How implied value is computed"></section>
 </main>
-<div class="dialog-backdrop" id="dialog-backdrop" hidden>
-  <div class="dialog" role="dialog" aria-modal="true" aria-label="Protocol detail" id="dialog"></div>
-</div>
+
+<dialog id="detail">
+  <div class="dlg-head"><h2 id="d-name"></h2><button id="d-close" aria-label="Close">✕</button></div>
+  <p class="d-sub" id="d-sub"></p>
+  <h3>Model breakdown</h3>
+  <table class="break" id="d-break"></table>
+  <p class="recompute" id="d-recompute"></p>
+  <h3>Farm plan — $1,000 ticket · 60-day hold</h3>
+  <ol class="steps" id="d-steps"></ol>
+  <p class="hint" id="d-slice"></p>
+</dialog>
+
+<footer>Token launch radar · radar-3 · built from the sealed 2026-11-14 DeFiLlama snapshot only. Nothing here is a price, a promise or advice — every value is the snapshot's own figures read through one fitted curve.</footer>
 <script src="../data.js"></script>
 <script src="app.js"></script>
 </body>
